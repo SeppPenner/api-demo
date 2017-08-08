@@ -26,6 +26,8 @@ npm install
 ## start
 
 Point your web browser to:
-file://path/to/api-demo/index.html
+
+file:///path/to/api-demo/index.html
+
 (edit the path to where you have installed this file)
 
