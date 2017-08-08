@@ -1,0 +1,1469 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Ripple API Introduction</title>
+    <link rel="icon" type="image/png" href="assets/img/favicon.png" sizes="32x32" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <style type="text/css">
+     @import url(https://fonts.googleapis.com/css?family=Inconsolata|Open+Sans);
+
+
+      body { font-family: 'Open Sans', sans-serif; }
+     h1, h2, h3 {
+        font-family: 'Open Sans', sans-serif;
+        font-weight: normal;
+        font-size: 80%;
+      }
+     .remark-slide-content h1 { font-weight: bold; font-size: 45px; color: #27a2db;}
+     .remark-slide-content h2 { font-weight: normal; font-size: 35px;}
+     .remark-slide-content h3 { font-weight: normal; font-size: 30px;}
+
+      .remark-code, .remark-inline-code { font-family: 'Inconsolata', monospace; }
+     .preformatted { font-family: 'Inconsolata', monospace; white-space: pre; display: block; background: #F0F0F0;}
+     .smallest { font-size: xx-small; display: block;}
+     .small { font-size: small; display: block;}
+
+     .logo {
+       width: 110px;
+       height: 36px;
+     }
+
+     .slide-header {
+       border-bottom: 1px solid #27a2db;
+       margin-bottom: -10px;
+       padding: 10px 15px 10px 15px;
+     }
+
+    </style>
+  </head>
+  <body>
+    <textarea id="source">
+
+layout: true
+      <div class=slide-header>
+        <img class="logo" alt="ripple-logo" src="assets/img/ripple-logo.png">
+      </div>
+
+---
+class: center, middle
+# Introduction to Ripple APIs
+
+[Presenter Name]
+
+[Presenter Title]
+
+[Presenter Contact Information]
+
+---
+hook: confirmFaucetResponse
+
+# Ripple APIs Overview
+
+## Connect to `rippled`
+## Query Ledger Data
+## Write Ledger Data (Transactions)
+
+```
+
+
+
+
+```
+
+Complete documentation: [ripple.com/build](https://www.ripple.com)
+
+
+---
+
+hook: showFaucetResponse
+
+# Before We Begin...
+
+We will need XRP for API examples that follow.
+
+We will use the Ripple *Test Net*, where we can allocate ourselves
+some test XRP.
+
+Unlike XRP on the live network, Test Net funds have no real value.
+The Test Net ledger and balances are reset frequently.
+
+---
+
+hook: showFaucetResponse
+
+# Test Net XRP
+
+A Test Net account can be generated manually on
+https://ripple.com/build/ripple-test-net/,
+
+or programatically via an HTTP request:
+
+```bash
+curl -s -X POST https://faucet.altnet.rippletest.net/accounts
+```
+
+Example response:
+
+.faucetResponse.preformatted[ ... ]
+
+---
+
+hook: showFaucetResponse
+
+# Test Net XRP
+
+.faucetResponse.preformatted[ ... ]
+
+The response gives a unique *address* for the account:
+
+.faucetResponse-address.preformatted[address]
+
+And a *secret* that will allow us to transact with this account.
+
+The address is derived from a *public key*.
+The secret is derived from the corresponding *private key*.
+
+The *balance* indicates that the account was initially funded with
+10,000 XRP.
+
+Remember that on the **Test Net XRP have no real value**.
+
+
+---
+
+hook: showFaucetResponse
+
+# Test Net XRP
+
+.faucetResponse.preformatted[ ... ]
+
+**Never show, or share, your secret key!**
+
+We are showing one here for a *Test Net* account, which holds *no real value*.
+
+
+---
+
+# Ripple APIs Overview
+
+
+
+## **Connect to `rippled`**
+## Query Ledger Data
+## Write Ledger Data (Transactions)
+
+
+---
+
+# Connect to `rippled`
+
+`server_info` is a `rippled` *command*.
+
+Response confirms that an application can reach `rippled`.
+
+Also indicates whether the `rippled` server is in sync with the rest of the network.
+
+`rippled` offers three ways to invoke the `server_info` command:
+
+- Command line
+
+- JSON-RPC
+
+- WebSocket
+
+
+JavaScript applications can use [RippleAPI](https://ripple.com/build/rippleapi), a library which wraps `rippled`'s websocket interface.
+
+---
+
+# Connect to `rippled`
+## Command line
+
+`rippled` features are available through a *command line*
+interface, when you are running an instance of
+`rippled` on your local machine.
+
+To invoke the `server_info` command, for example:
+
+```bash
+rippled server_info
+
+```
+
+---
+hook: showRippledURL
+# Connect to `rippled`
+## JSON-RPC
+
+Applications may also POST *Remote Procedure Calls* (RPC) to `rippled`.
+
+
+```bash
+
+curl -s -X POST "$RIPPLED_RPC" -d @- <<-END
+{
+    "method": "server_info",
+    "params": [ {} ]
+}
+END
+```
+
+---
+
+# Connect to `rippled`
+## Websocket
+
+*Websockets* allow applications to submit multiple requests over a long-lived connection.
+
+Requests may receive multiple responses, or subscribe to events.
+
+To invoke `server_info`, POST:
+
+```json
+{
+  "id": 1,
+  "command": "server_info"
+}
+
+```
+
+The response will include the same `id` that was passed in.  Your application should increase that counter with each subsequent request.
+
+---
+
+# Connect to `rippled`
+## RippleAPI
+
+This [*boilerplate*](https://ripple.com/build/rippleapi/#boilerplate) shows the [`connect()`](https://ripple.com/build/rippleapi/#connect) method.
+
+```javascript
+
+const {RippleAPI} = require('ripple-lib');
+
+const api = new RippleAPI({
+  server: 'wss://s.altnet.rippletest.net:51233'
+});
+
+api.connect().then(() => {
+
+  /* insert code here */
+
+}).then(() => {
+  return api.disconnect();
+}).catch(console.error);
+
+
+```
+
+After `connect()`, other methods may be invoked.
+
+---
+# Connect to `rippled`
+## RippleAPI
+
+[getServerInfo()](https://ripple.com/build/rippleapi/#getserverinfo) in `ripple-lib` corresponds to `rippled`'s [`server_info`](https://ripple.com/build/rippled-apis/#server-info).
+
+```javascript
+
+api.connect().then(() => {
+
+  // Request server_info, log response...
+  api.getServerInfo().then(info => {
+
+    console.log(info);
+
+  });
+});
+
+```
+
+
+---
+hook: showServerInfo
+# Connect to `rippled`
+
+## `getServerInfo()` response
+
+.serverInfo.preformatted[{ server_info }]
+
+JavaScript response shown, `server_info` command returns similar information.
+
+*(portions of response omitted for brevity)*
+
+---
+hook: showServerInfo
+# Connect to `rippled`
+
+## `getServerInfo()` response
+
+.serverInfo.preformatted[{ server_info }]
+
+Fields including `completeLedgers`, `peers`, and `serverState` make `server_info` useful when troubleshooting `rippled` issues.
+
+---
+
+# Ripple APIs Overview
+
+## Connect to `rippled`
+## **Query Ledger Data**
+## Write Ledger Data (Transactions)
+
+---
+# Query Ledger Data
+
+The
+[`account_info`](https://ripple.com/build/rippled-apis/#account-info)
+command retrieves information about an account, its activity, and its
+XRP balance.
+
+Like `server_info`, `account_info` can be invoked via `rippled`
+webSockets or JSON-RPC, or via JavaScript.
+
+---
+hook: showHotAccountInfo showRippledURL
+# Query Ledger Data
+## [`account_info`](https://ripple.com/build/rippled-apis/#account-info) by JSON-RPC
+
+```bash
+curl -s -X POST "$RIPPLED_RPC" -d @- <<-END
+{
+    "method": "account_info",
+    "params": [{ "account": "$ADDRESS" }]
+}
+END
+```
+
+---
+hook: showHotAccountInfo
+# Query Ledger Data
+## [`getAccountInfo()`](https://ripple.com/build/rippleapi/#getaccountinfo) by JavaScript
+
+```javascript
+
+api.connect().then(() => {
+
+  // Request account_info, log response...
+  api.getAccountInfo("$ADDRESS").then(info => {
+    console.log(info);
+  });
+});
+
+```
+
+
+---
+
+hook: showHotAccountInfo
+
+# Query Ledger Data
+
+## [`getAccountInfo()`](https://ripple.com/build/rippleapi/#getaccountinfo)
+
+.hotAccountInfo.preformatted[{account_info}]
+
+*sequence* orders transactions submitted by this account.
+
+*xrpBalance* shows XRP owned by this account.
+
+**Note:** JavaScript returns `"xrpBalance"` in *XRP*.  Other APIs return `"Balance"` in *drops*.
+
+```
+1 XRP == 1,000,000 drops
+```
+
+---
+
+# Ripple APIs Overview
+
+## Connect to `rippled`
+## Query Ledger Data
+## **Write Ledger Data (Transactions)**
+
+---
+
+# Write Ledger Data
+
+A [transaction](https://ripple.com/build/transactions/) is the only way to modify the Ripple Ledger.
+
+Transactions are only valid if signed, submitted, and accepted into a validated ledger version following the [consensus process](https://ripple.com/build/ripple-ledger-consensus-process/).
+
+There are several [transaction *types*](https://ripple.com/build/transactions/#transaction-types),
+which have a variety of effects on the ledger.
+
+`Payment` is the transaction type we'll use next...
+
+---
+# Write Ledger Data
+## [Payment](https://ripple.com/build/transactions/#payment) Transaction
+
+A `Payment` transaction represents a transfer of value from one account to another.
+
+Payments are also the only way to [create accounts](https://ripple.com/build/transactions/#creating-accounts).
+
+The slides that follow we show how this is done.
+
+We begin by creating a new address to receive the payment...
+
+---
+hook: showColdWallet
+
+# Write Ledger Data
+## [Payment](https://ripple.com/build/transactions/#payment) Transaction
+
+`rippled` provides [`wallet_propose`](https://ripple.com/build/rippled-apis/#wallet-propose) to create a new address.
+
+RippleAPI (javascript) provides [`generateAddress()`](https://ripple.com/build/rippleapi/#generateaddress).  Note that `api.generateAddress()` can be called without `api.connect()`.
+
+
+```javascript
+// Generate address, log address (not secret)
+account = api.generateAddress();
+console.log("Generated " + account.address);
+
+```
+
+Result:
+
+.coldWallet.preformatted[{ cold wallet }]
+
+Remember, normally, don't share secrets.
+
+---
+hook: showColdWallet showHotWallet showPaymentHotToCold
+
+# Write Ledger Data
+## [Payment](https://ripple.com/build/transactions/#payment) Transaction
+
+Here is an example of a prepared Payment transaction:
+
+.paymentHotToCold.preformatted[{ txJSON }]
+
+Fields `"TransactionType", "Account", "Sequence", "LastLedgerSequence"` and `"Fee"` appear in all [transaction types](https://ripple.com/build/transactions/).
+
+---
+hook: showColdWallet showHotWallet showPaymentHotToCold
+
+# Write Ledger Data
+## [Payment](https://ripple.com/build/transactions/#payment) Transaction
+
+Here is an example of a prepared Payment transaction:
+
+.paymentHotToCold.preformatted[{ txJSON }]
+
+`"Destination"` and `"Amount"` fields are specific to the Payment transaction type.
+
+This example prepares an XRP payment from our first account to the new address we generated.
+
+---
+# Write Ledger Data
+## Submit Payment Transaction
+
+The `rippled` [submit](https://ripple.com/build/rippled-apis/#submit) method
+applies a transaction and sends it to the network to be confirmed
+and included in future ledgers.
+
+Cryptographically signing the transaction and
+submitting it to the network can be performed in two independent steps.
+
+In JavaScript API, the [sign()](https://ripple.com/build/rippleapi/#sign) method
+should always be invoked before [submit()](https://ripple.com/build/rippleapi/#submit).
+
+
+---
+hook: showProvisionalPaymentHotToCold
+# Write Ledger Data
+## Submit Payment Transaction
+
+The immediate [submit](https://ripple.com/build/rippled-apis/#submit) response indicates a **provisional** result.
+
+.provisionalPaymentHotToCold.preformatted[{ provisional result }]
+
+**The final outcome of a transaction *is not known until it appears in a validated ledger*.**
+
+---
+hook: showFinalPaymentHotToCold
+# Write Ledger Data
+## Submit Payment Transaction
+
+After waiting several seconds, for the consensus process to complete, query for the final result of the transaction.
+
+Use `rippled`'s [tx](https://ripple.com/build/rippled-apis/#tx) command, or `RippleAPI`'s [getTransaction()](https://ripple.com/build/rippleapi/#gettransaction).
+
+It bears repeating: *The final outcome of a transaction is not known until it appears in a validated ledger.*
+
+A transaction which provisionally returned an error may eventually succeed.
+
+A transaction which provisionally returned success, may eventually fail.
+
+When a transaction appears in a validated ledger, its outcome is immutable.  It will never change.
+
+---
+hook: showFinalPaymentHotToCold
+# Write Ledger Data
+## Submit Payment Transaction
+
+.finalPaymentHotToCold.preformatted.small[{ final result }]
+
+The response to [getTransaction()](https://ripple.com/build/rippleapi/#gettransaction) shows the final, immutable result in `"outcome"`.
+
+Note, when using `rippled`'s [tx](https://ripple.com/build/rippled-apis/#tx), look for **`"validated": true`**.
+
+---
+hook: showFinalPaymentHotToCold
+# Write Ledger Data
+## Submit Payment Transaction
+
+.finalPaymentHotToCold.preformatted.small[{ final result }]
+
+The *`id`* is the transaction's permanent unique identifier.  This is also known as the transaction's *`hash`*.
+
+The combination of *`address`* and *`sequence`* together also uniquely identifies this transaction.
+
+---
+hook: showFinalPaymentHotToCold
+# Write Ledger Data
+## Submit Payment Transaction
+
+.finalPaymentHotToCold.preformatted.small[{ final result }]
+
+Validated payment transactions have a *`deliveredAmount`*.
+
+In `rippled` APIs, this is called *`delivered_amount`*.
+
+Inspect the `delivered_amount`, **not the `Amount`**, when handling payments.
+
+
+---
+# Ripple APIs
+## Review
+
+* APIs are available in several formats
+  * `rippled` command line
+  * JSON-RPC
+  * webSockets
+  * JavaScript
+* A variety of API calls query ledger data
+* Only the `submit` API writes to the ledger
+* See [ripple.com/build](https://ripple.com/build) for complete documentation and tools
+
+---
+# Ripple APIs
+
+## Nota Bene (!)
+
+* Protect secret keys
+* Be aware of Test Net vs Live Net
+* The result of `submit` API is *provisional*
+  * Results are *immutable* only when they appear in a *validated* ledger
+* When processing Payments, observe the `delivered_amount` field
+  * `delivered_amount` may differ from `Amount`
+* Some API values are *XRP*, while others are *drops*
+  * `1,000,000 drops == one XRP`
+
+---
+# Ripple APIs Advanced
+
+## `AccountSet` Transaction Type
+## Offline Transaction Signing
+## Hot and Cold Wallets
+
+---
+# Ripple APIs Advanced
+## AccountSet Transaction
+
+Each Ripple account has a balance of XRP.
+
+An account also has settings and properties.
+
+Transactions of type [`AccountSet`](https://ripple.com/build/transactions/#accountset) modify properties of an account.
+
+The examples that follow use `AccountSet` to change two [*account flags*](https://ripple.com/build/transactions/#accountset-flags):
+
+* `asfRequireDest` - payments to this address must have *destination tag*
+* `asfRequireAuth` - all *trust lines* must be approved
+
+
+---
+hook: showAccountSetRequireDest
+# Ripple APIs Advanced
+## AccountSet Transaction
+
+.preparedAccountSetRequireDest.preformatted[{ tx JSON }]
+
+`"SetFlag"` is an *account flag* (`asfRequireDest == 1`), a field specific to the `AccountSet` transaction type.
+
+`"Flags"` are *transaction flags*, a field on all transaction types.
+
+---
+hook: showAccountSetRequireDest
+# Ripple APIs Advanced
+## AccountSet Transaction
+
+.preparedAccountSetRequireDest.preformatted[{ tx JSON }]
+
+Unlike the `Payment` transaction we submitted earlier, this transaction:
+
+* Omits the `LastLedgerSequence` field
+
+* Specifies a higher fee
+
+These changes make it easier to separate the *sign* and *submit* steps.
+
+
+---
+hook: showAccountSetRequireAuth
+# Ripple APIs Advanced
+## AccountSet Transaction
+
+.preparedAccountSetRequireAuth.preformatted[{ tx JSON }]
+
+This transaction is almost identical to the earlier `AccountSet`.
+
+* `"SetFlag"` is now 2, for `asfRequireAuth`
+
+* `"Sequence"` is incremented by `1`
+
+An account cannot submit two transactions with the same *account sequence* number, it must increase by one with each new transaction.
+
+---
+# Ripple APIs Advanced
+## Offline Transaction Signing
+
+We've prepared two `AccountSet` transactions.
+
+Next we will *sign* both.
+
+Signing, unlike submitting, can be done *offline* for full protection of secret keys.
+
+
+---
+hook: showRippledURL showAccountSetRequireDest showColdWallet
+# Ripple APIs Advanced
+## Offline Transaction Signing
+
+`rippled` JSON-RPC [sign](https://ripple.com/build/rippled-apis/#sign) example:
+
+```bash
+curl -s -X POST "$RIPPLED_RPC" -d @- <<-END
+{
+    "method": "sign",
+    "params": [ {
+        "offline": true,
+        "secret": "$SECRET",
+        "tx_json": $TX_JSON
+    } ]
+}
+END
+```
+
+`"offline"` tells `rippled` to sign only, not submit.
+
+`"tx_json"` is the `AccountSet` transaction as shown previously.
+
+*Don't post a `"secret"`, except to a local `rippled` that you host and keep secure*.
+
+---
+hook: showRippledURL showAccountSetRequireDest showColdWallet
+# Ripple APIs Advanced
+## Offline Transaction Signing
+
+JavaScript [sign](https://ripple.com/build/rippleapi/#sign) example:
+
+```javascript
+// Sign transaction, log response...
+txJSON = '$TX_JSON';
+secret = '$SECRET';
+result = api.sign(txJSON, secret);
+console.log(result)
+```
+
+Like `api.generateAddress()` shown earlier, `api.sign()` can be called without `api.connect()`.
+
+---
+hook: showSignedAccountSetRequireAuth showSignedAccountSetRequireDest
+# Ripple APIs Advanced
+## Offline Transaction Signing
+
+Signed `AccountSet (asfRequireDest)` example:
+
+.signedAccountSetRequireDest.preformatted.small[]
+
+Signed `AccountSet (asfRequireAuth)` example:
+
+.signedAccountSetRequireAuth.preformatted.small[]
+
+
+Note the `"id"` (a.k.a. `"hash"`) is the permanent identifier for a transaction.
+
+The `"signedTransaction"` may be copied to an online machine, to be submitted to the network.
+
+---
+hook: showRippledURL showSignedAccountSetRequireDest
+# Ripple APIs Advanced
+## Offline Transaction Signing
+
+`rippled` JSON-RPC [submit](https://ripple.com/build/rippled-apis/#submit) example:
+
+```bash
+curl -s -X POST "$RIPPLED_RPC" -d @- <<-END
+{
+    "method": "submit",
+    "params": [ {
+        "tx_blob": $TX_BLOB
+    } ]
+}
+END
+```
+
+`"tx_blob"` is the signed transaction returned from `sign`.
+
+---
+hook: showRippledURL showSignedAccountSetRequireDest
+# Ripple APIs Advanced
+## Offline Transaction Signing
+
+JavaScript [submit](https://ripple.com/build/rippleapi/#submit) example:
+
+```javascript
+signedTransaction = $TX_BLOB
+
+api.connect().then(() => {
+
+  // Submit transaction, log response...
+  api.submit(signedTransaction).then(provisionalResult => {
+    console.log(provisionalResult);
+  });
+
+});
+
+```
+
+`signedTransaction` is the signed transaction returned from `api.sign()`.
+
+---
+hook: showSubmitAccountSetRequireDest showSubmitAccountSetRequireAuth
+# Ripple APIs Advanced
+## Offline Transaction Signing
+
+Provisional result of submitted `AccountSet` (`asfRequireDest` flag):
+
+.submitAccountSetRequireDest.preformatted.small[{ pending... }]
+
+Provisional result of submitted `AccountSet` (`asfRequireAuth` flag):
+
+.submitAccountSetRequireAuth.preformatted.small[{ pending... }]
+
+The result of submitting a transaction is *provisional*.
+
+Final result is available after network consensus.
+
+---
+hook: showFinalAccountSetRequireDest
+# Ripple APIs Advanced
+## Offline Transaction Signing
+
+Final result of first `AccountSet` transaction (via javascript [getTransaction()](https://ripple.com/build/rippleapi/#gettransaction)):
+
+.finalAccountSetRequireDest.preformatted.small[{ pending... }]
+
+---
+hook: showFinalAccountSetRequireAuth
+# Ripple APIs Advanced
+## Offline Transaction Signing
+
+Final result of second `AccountSet` transaction (via javascript [getTransaction()](https://ripple.com/build/rippleapi/#gettransaction)):
+
+.finalAccountSetRequireAuth.preformatted.small[{ pending... }]
+
+---
+#Ripple APIs Advanced
+## Review
+
+* We started with a *Test Net* account (with 10,000 XRP)
+
+* We used `wallet_propose` or `generateAddress()` to make a new address
+  * An address is derived from public/private key pair
+
+* We used a `Payment` transaction to create an account with that address
+  * An address is not an account on ledger until it is funded with an XRP *reserve*
+
+---
+#Ripple APIs Advanced
+## Review
+
+* We signed two `AccountSet` transactions, setting account flags
+
+  * `asfRequireDest` and `asfRequireAuth` are recommended for exchanges
+
+* We signed transactions "offline", to better protect the private key
+
+* We submit the two signed transactions to the network
+
+---
+#Ripple APIs Advanced
+## Hot and Cold Wallets
+
+Our new account has recommended flags set.
+
+We protected the account's secret key by signing transactions "offline".
+
+This level of security is typical for *cold wallets*.
+
+If online systems are hacked, an offline cold wallet key remains safe.
+
+*Hot wallet* keys could be exposed, so hold lower balances in hot wallets.
+
+---
+# Ripple APIs Advanced
+## Hot and Cold Wallets
+
+* Cold Wallet
+  * Keep secret key offline
+  * Set recommended account flags
+  * Published address
+  * Receives incoming deposits
+  * Holds majority of XRP
+* Hot Wallet(s)
+  * Secret may be online, for automated processes
+  * Holds just enough funds
+  * Enables outgoing withdrawals
+
+Use cold wallet key infrequently, i.e. to sign transactions when hot wallet(s) need funds.
+
+---
+hook: showHotWallet showHotAccountInfo
+# Ripple APIs Advanced
+## Hot and Cold Wallets
+
+We created a Test Net **hot** wallet:
+
+.hotWalletAddress.preformatted[]
+
+A current snapshot of this wallet, via `getAccountInfo()`:
+
+.hotAccountInfo.preformatted[]
+
+
+
+---
+hook: showColdWallet showColdAccountInfo
+# Ripple APIs Advanced
+## Hot and Cold Wallets
+
+We created a Test Net **cold** wallet:
+
+.coldWalletAddress.preformatted[]
+
+A current snapshot of this wallet, via `getAccountInfo()`:
+
+.coldAccountInfo.preformatted[]
+
+
+---
+hook: showHotWallet showHotAccountInfo
+# Ripple APIs Advanced
+## Hot and Cold Wallets
+
+The accounts below were created by javascript running in your web browser.
+
+Copy and save these key pairs:
+
+.hotWallet.preformatted[]
+
+.coldWallet.preformatted[]
+
+These are active *Test Net* accounts which you can use to start your Ripple integration today.
+
+
+
+
+    </textarea>
+    <script src="remark/remark-latest.min.js" type="text/javascript">
+    </script>
+    <script src="node_modules/jquery/dist/jquery.min.js" type="text/javascript">
+    </script>
+    <script src="node_modules/lodash/lodash.js" type="text/javascript">
+    </script>
+    <script src="node_modules/ripple-lib/build/ripple-0.17.3-debug.js" type="text/javascript">
+    </script>
+    <script type="text/javascript">
+     var slideshow = remark.create();
+     var currentSlide;
+
+     // rippled websocket url and port
+     //rippled = 'wss://s1.ripple.com' // Public rippled server hosted by Ripple, Inc.
+     rippled = 'wss://s.altnet.rippletest.net:51233' // https://ripple.com/build/ripple-test-net/
+     rippled_rpc = 'https://s.altnet.rippletest.net:51234'
+
+     // A hook is triggered when the slideshow reaches a particular point.
+     function testhook(slide) {
+       console.log("testhook");
+       $('#testhook').remove();
+       if (typeof slide.properties.name == 'string') {
+         $('#' + slide.properties.name).after('<p id="testhook">testhook</p>');
+       }
+     }
+
+     // These callbacks are invoked by remark.js as slides are advanced.
+     // Our implementation calls our hooks, above.
+     function onShowSlide(slide) {
+       // Slide is the slide being navigated to
+       currentSlide = slide;
+       //console.log(slide);
+       if (typeof slide.properties.hook != 'undefined') {
+         slide.properties.hook.split(" ").forEach(hook => {
+           if (typeof window[hook] == 'function') {
+             window[hook](slide);
+           } else {
+             console.error("Unknown hook:" + hook);
+           }
+         });
+       }
+     }
+
+     function onHideSlide(slide) {
+       // Slide is the slide being navigated away from
+       //console.log(slide);
+     }
+
+     function showServerInfo() {
+       connectAPI().then(api => {
+         api.getServerInfo().then(info => {
+           // Before showing, remove some of the verbose info that
+           // prevents the rest from fitting on a page.
+           delete info.stateAccounting;
+           delete info.validatedLedger;
+           delete info.lastClose;
+
+           $(".serverInfo").text(JSON.stringify(info, null, 2));
+           //$(".serverInfo").text(JSON.stringify(info));
+         });
+       });
+     }
+
+     function showColdWallet() {
+       wallet = coldWallet();
+       console.log(wallet);
+       $(".coldWallet").text(JSON.stringify(wallet, null, 2));
+       $(".coldWalletSecret").text(wallet.secret);
+       $(".coldWalletAddress").text(wallet.address);
+
+       $('.hljs-string').each(function() {
+         var text=$(this).text();
+         $(this).text(text.replace('$SECRET', wallet.secret));
+       });
+
+     }
+
+     function getColdWalletXXX() {
+       console.log("getColdWallet()...");
+       if (typeof localStorage.coldWallet == "undefined") {
+         return connectAPI().then(api => {
+           wallet = api.generateAddress();
+           localStorage.coldWallet = JSON.stringify(wallet);
+         });
+       } else {
+         console.log("Found localStorage cold wallet");
+         console.log(localStorage.coldWallet);
+         // $.when() is a resolved promise.
+         return $.when().then(() => {
+           data = JSON.parse(localStorage.coldWallet);
+           return data;
+         });
+       }
+     }
+
+     function coldWallet() {
+       console.log("getColdWallet()...");
+       if (typeof localStorage.coldWallet == "undefined") {
+         wallet = rippleAPI().generateAddress();
+         localStorage.coldWallet = JSON.stringify(wallet);
+         return wallet;
+       } else {
+         console.log("Found localStorage cold wallet");
+         console.log(localStorage.coldWallet);
+         data = JSON.parse(localStorage.coldWallet);
+         return data;
+       }
+     }
+
+     function showHotWallet() {
+       getHotWallet().then(wallet => {
+         $(".hotWallet").text(JSON.stringify(wallet, null, 2));
+         $(".hotWalletSecret").text(wallet.secret);
+         $(".hotWalletAddress").text(wallet.address);
+
+         $('.hljs-string').each(function() {
+           var text=$(this).text();
+           $(this).text(text.replace('$SECRET', wallet.secret));
+         });
+
+       });
+     }
+
+     function showRippledURL() {
+       // In order to show our address nested inside code...
+       $('.hljs-string').each(function() {
+         var text = $(this).text();
+         $(this).text(text.replace('$RIPPLED_RPC', rippled_rpc)
+                          .replace('$RIPPLED', rippled));
+       });
+     }
+
+     function showHotAccountInfo() {
+       getHotWallet().then(account => {
+         rippleAPI().connect().then(() => {
+           rippleAPI().getAccountInfo(account.address).then(info => {
+             $(".hotAccountInfo").text(JSON.stringify(info, null, 2));
+             $(".hotAccountAddress").text(account.address);
+
+             // In order to show our address nested inside code...
+             $('.hljs-string').each(function() {
+               var text = $(this).text();
+               $(this).text(text.replace('<address>', account.address)
+                                .replace('$ADDRESS', account.address)
+                 );
+
+             });
+           });
+         });
+       });
+     }
+
+     function showColdAccountInfo() {
+       account = coldWallet();
+       rippleAPI().connect().then(() => {
+         rippleAPI().getAccountInfo(account.address).then(info => {
+           $(".coldAccountInfo").text(JSON.stringify(info, null, 2));
+           $(".coldAccountAddress").text(account.address);
+
+             // In order to show our address nested inside code...
+             $('.hljs-string').each(function() {
+               var text = $(this).text();
+               $(this).text(text.replace('<address>', account.address)
+                                .replace('$ADDRESS', account.address)
+               );
+
+             });
+         });
+       });
+     }
+
+     // The faucet response becomes invalid, from time to time when the altnet is reset.
+     // Here we clean out data if that has happened.
+     function confirmFaucetResponse() {
+       if (typeof localStorage.faucetResponse != "undefined") {
+         faucetResponse = JSON.parse(localStorage.faucetResponse);
+         connectAPI().then(api => {
+           api.getAccountInfo(faucetResponse.account.address).then(info => {
+             console.log(info);
+           }).catch(e => {
+             // TODO: figure out what happens when account not found.  Delete localStorage when that happens.
+             console.log(e);
+           });
+         });
+       }
+     }
+
+     function showFaucetResponse() {
+       getHotWallet().then((account) => {
+         console.log("showFaucetResponse");
+         console.log(account);
+         $(".faucetResponse").text(localStorage.faucetResponse);
+         $(".faucetResponse-address").text(account.address);
+       })
+     }
+
+     function getHotWallet() {
+       console.log("getHotWallet()...");
+       if (typeof localStorage.faucetResponse == "undefined") {
+         return newWalletFromFaucet();
+       } else {
+         console.log("Found localStorage wallet");
+         console.log(localStorage.faucetResponse);
+         // $.when() is a resolved promise.
+         return $.when().then(() => {
+           data = JSON.parse(localStorage.faucetResponse);
+           return data.account;
+         });
+       }
+     }
+
+     function newWalletFromFaucet() {
+       return $.post("https://faucet.altnet.rippletest.net/accounts", function(data) {
+         console.log("Test net faucet provided wallet");
+         console.log(data);
+         if (typeof data.account != "undefined") {
+           localStorage.faucetResponse = JSON.stringify(data, null, 4);
+           console.log("faucetResponse saved.")
+         }
+         return data.account;
+       }, "json");
+     }
+
+     // In order to better pass around payment data, we need to keep a few items together.  The payment id (hash) is returned from sign(), and RippleAPI conveniently does not include the hash from submit().  So we pack and unpack the two items together.
+     function packPayment(prepareResult, signResult, submitResult) {
+       return {
+         "prepareResult": prepareResult,
+         "signResult": signResult,
+         "submitResult": submitResult
+       };
+     }
+     function unpackPrepare(pp) {return pp.prepareResult;}
+     function unpackSign(pp) {return pp.signResult;}
+     function unpackSubmit(pp) {return pp.submitResult;}
+
+     function showPaymentHotToCold() {
+       return preparePaymentHotToCold().then(prepared => {
+         parsed = JSON.parse(prepared.txJSON);
+         console.log(parsed);
+         $(".paymentHotToCold").text(JSON.stringify(parsed, null, 2));
+
+         // No need to store the prepared payment.  We will generate it with a fresh LastLedgerSequence each time.
+
+         return prepared
+       });
+     }
+
+     function submitPaymentHotToCold() {
+       api = rippleAPI();
+       return getHotWallet().then(hot => {
+         return showPaymentHotToCold().then(prepared => {
+           signed = api.sign(prepared.txJSON, hot.secret);
+           console.log("SIGNED");
+           console.log(signed);
+           return api.submit(signed.signedTransaction).then(result => {
+             console.log("SUBMITTED");
+             console.log(result)
+             // Signed includes hash, result does not!
+             return packPayment(prepared, signed, result);
+           });
+         });
+       });
+     }
+
+     function getProvisionalPaymentHotToCold() {
+       if (typeof localStorage.paymentHotToCold == "undefined") {
+         return submitPaymentHotToCold().then(packed => {
+           result = unpackSubmit(packed);
+           if (result.resultCode == "tesSUCCESS") {
+             localStorage.paymentHotToCold = JSON.stringify(packed);
+           }
+           return packed;
+         });
+       } else {
+         return $.when().then(() => {
+           packed = JSON.parse(localStorage.paymentHotToCold);
+           return packed;
+         });
+       }
+     }
+
+     function showProvisionalPaymentHotToCold() {
+       return getProvisionalPaymentHotToCold().then(packed => {
+         result = unpackSubmit(packed);
+         signed = unpackSign(packed);
+         $(".provisionalPaymentHotToCold").text(JSON.stringify(result, null, 2));
+         $(".signedPaymentHotToCold").text(JSON.stringify(signed, null, 2));
+         $(".hashPaymentHotToCold").text(signed.id);
+       });
+     }
+
+     function preparePaymentHotToCold() {
+       cold = coldWallet();
+       return getHotWallet().then(hot => {
+         return connectAPI().then((api) => {
+           console.log(hot);
+           p = {
+             "source": {
+               "maxAmount": {"currency": "XRP", "value": "100"},
+               "address": hot.address
+             },
+             "destination": {
+               "amount": {"currency": "XRP", "value": "100"},
+               "address": cold.address
+             }
+           };
+
+           console.log(p); // debug
+           payment = api.preparePayment(p.source.address, p);
+           return payment;
+         });
+       });
+     }
+
+     function showFinalPaymentHotToCold() {
+       return getProvisionalPaymentHotToCold().then(packed => {
+         signed = unpackSign(packed);
+         return connectAPI().then(api => {
+           console.log("Looking up " + signed.id);
+           return api.getTransaction(signed.id).then(tx => {
+             console.log(tx);
+             // Remove the very verbose parts, to fit slide.
+             tx.specification = "{ /* omitted for brevity */ }";
+             //tx.outcome = "{...}";
+             delete tx.outcome.balanceChanges;
+             delete tx.outcome.orderbookChanges;
+             delete tx.outcome.indexIntLedger;
+
+             $(".finalPaymentHotToCold").text(JSON.stringify(tx, null, 2));
+           }).catch(e => {
+             $(".finalPaymentHotToCold").text("Failed to look up transaction " + signed.id);
+           });
+         });
+       });
+     }
+
+     function prepareAccountSetRequireDest() {
+       cold = coldWallet();
+       return connectAPI().then(api => {
+         settings = {
+           "requireDestinationTag": true,
+         }
+         return api.prepareSettings(cold.address, settings).then(prepared => {
+           txJSON = JSON.parse(prepared.txJSON);
+
+           // Because we will sign this transaction "offline", modify it.
+           delete txJSON.LastLedgerSequence;
+           txJSON.Fee = txJSON.Fee + "0"; // multiply a string by 10 :)
+           txJSON.Sequence = txJSON.Sequence;
+           return txJSON;
+         });
+       });
+     }
+
+     function showAccountSetRequireDest() {
+       prepareAccountSetRequireDest().then(txJSON => {
+         $(".preparedAccountSetRequireDest").text(JSON.stringify(txJSON, null, 2));
+
+         $('.hljs-variable,.hljs-string').each(function() {
+           var text=$(this).text();
+           $(this).text(text.replace('$TX_JSON', JSON.stringify(txJSON)));
+         });
+
+       });
+     }
+
+     function signAccountSetRequireDest() {
+       if (typeof localStorage.signedAccountSetRequireDest == "undefined") {
+         cold = coldWallet();
+         return prepareAccountSetRequireDest().then(tx => {
+           console.log(tx);
+           signed = rippleAPI().sign(JSON.stringify(tx), cold.secret);
+           console.log(signed);
+           localStorage.signedAccountSetRequireDest = JSON.stringify(signed);
+           return signed;
+         });
+       } else {
+         var signed = JSON.parse(localStorage.signedAccountSetRequireDest);
+         return $.when().then(() => {
+           return signed;
+         });
+       }
+     }
+
+     function showSignedAccountSetRequireDest() {
+       signAccountSetRequireDest().then(signed => {
+         $(".signedAccountSetRequireDest").text(JSON.stringify(signed, null, 2));
+         $('.hljs-variable,.hljs-string,.remark-code-line').each(function() {
+           var text=$(this).text();
+           $(this).text(text.replace('$TX_BLOB', JSON.stringify(signed.signedTransaction)));
+         });
+
+       });
+     }
+
+     function submitAccountSetRequireDest() {
+       if (typeof localStorage.submitAccountSetRequireDest == "undefined") {
+         return signAccountSetRequireDest().then(signed => {
+           return connectAPI().then(api => {
+             return api.submit(signed.signedTransaction).then(result => {
+               if (result.resultCode == "tesSUCCESS") {
+                 localStorage.submitAccountSetRequireDest = JSON.stringify(result);
+               }
+               return result;
+             });
+           });
+         });
+       } else {
+         var result = JSON.parse(localStorage.submitAccountSetRequireDest);
+         return $.when().then(() => {
+           return result;
+         });
+       }
+
+     }
+
+     function showSubmitAccountSetRequireDest() {
+       submitAccountSetRequireDest().then(result => {
+         $(".submitAccountSetRequireDest").text(JSON.stringify(result, null, 2));
+       });
+     }
+
+     function showFinalAccountSetRequireDest() {
+       return signAccountSetRequireDest().then(signed => {
+         return connectAPI().then(api => {
+           return api.getTransaction(signed.id).then(tx => {
+             $(".finalAccountSetRequireDest").text(JSON.stringify(tx, null, 2));
+           }).catch(e => {
+             // Reach this when rippled does not have sufficient history to look up transaction.
+             console.log(e);
+             $(".finalAccountSetRequireDest").text("tx not found: " + signed.id);
+           });
+         });
+       });
+     }
+
+
+     function prepareAccountSetRequireAuth() {
+       cold = coldWallet();
+       return connectAPI().then(api => {
+         settings = {
+           "requireAuthorization": true,
+         }
+         return api.prepareSettings(cold.address, settings).then(prepared => {
+           console.log(prepared);
+           txJSON = JSON.parse(prepared.txJSON);
+
+           // Because we will sign this transaction "offline", modify it.
+           delete txJSON.LastLedgerSequence;
+           txJSON.Fee = txJSON.Fee + "0"; // multiply a string by 10 :)
+           txJSON.Sequence = txJSON.Sequence + 1;
+           return txJSON;
+         });
+       });
+     }
+
+     function showAccountSetRequireAuth() {
+       prepareAccountSetRequireAuth().then(txJSON => {
+         //txJSON = JSON.parse(prepared.txJSON);
+         $(".preparedAccountSetRequireAuth").text(JSON.stringify(txJSON, null, 2));
+       });
+     }
+
+     function signAccountSetRequireAuth() {
+       if (typeof localStorage.signedAccountSetRequireAuth == "undefined") {
+         cold = coldWallet();
+         return prepareAccountSetRequireAuth().then(tx => {
+           console.log(tx);
+           signed = rippleAPI().sign(JSON.stringify(tx), cold.secret);
+           console.log(signed);
+           localStorage.signedAccountSetRequireAuth = JSON.stringify(signed);
+           return signed;
+         });
+       } else {
+         var signed = JSON.parse(localStorage.signedAccountSetRequireAuth);
+         return $.when().then(() => {
+           return signed;
+         });
+       }
+     }
+
+     function showSignedAccountSetRequireAuth() {
+       signAccountSetRequireAuth().then(signed => {
+         $(".signedAccountSetRequireAuth").text(JSON.stringify(signed, null, 2));
+       });
+     }
+
+
+     function submitAccountSetRequireAuth() {
+       if (typeof localStorage.submitAccountSetRequireAuth == "undefined") {
+         return signAccountSetRequireAuth().then(signed => {
+           return connectAPI().then(api => {
+             return api.submit(signed.signedTransaction).then(result => {
+               if (result.resultCode == "tesSUCCESS") {
+                 localStorage.submitAccountSetRequireAuth = JSON.stringify(result);
+               }
+               return result;
+             });
+           });
+         });
+       } else {
+         var result = JSON.parse(localStorage.submitAccountSetRequireAuth);
+         return $.when().then(() => {
+           return result;
+         });
+       }
+
+     }
+
+     function showSubmitAccountSetRequireAuth() {
+       submitAccountSetRequireAuth().then(result => {
+         $(".submitAccountSetRequireAuth").text(JSON.stringify(result, null, 2));
+       });
+     }
+
+     function showFinalAccountSetRequireAuth() {
+       return signAccountSetRequireAuth().then(signed => {
+         return connectAPI().then(api => {
+           return api.getTransaction(signed.id).then(tx => {
+             $(".finalAccountSetRequireAuth").text(JSON.stringify(tx, null, 2));
+           }).catch(e => {
+             // Reach this when rippled does not have sufficient history to look up transaction.
+             console.log(e);
+             $(".finalAccountSetRequireAuth").text("tx not found: " + signed.id);
+           });
+         });
+       });
+     }
+
+
+     // This ready function is invoked by jQuery after other javascript has loaded.
+     $( document ).ready(function() {
+       console.log( "ready!" );
+
+       slideshow.on('showSlide', onShowSlide);
+
+       slideshow.on('hideSlide', onHideSlide);
+
+       r = rippleAPI();
+       //console.log(r);
+
+       // TODO: handle lack of storage support gracefully.
+       if (typeof(Storage) !== "undefined") {
+         // Code for localStorage/sessionStorage.
+       } else {
+         // Sorry! No Web Storage support..
+         console.error("No local storage!")
+      }
+     });
+
+     // Helper to get a connection to ripple network.
+     function rippleAPI() {
+       var api
+       if (typeof rippleAPI.api == 'undefined') {
+         // See https://ripple.com/build/rippleapi/#boilerplate for example of how to instantiate Ripple API.
+         rippleAPI.api = new ripple.RippleAPI({
+           server: rippled
+         });
+         rippleAPI.api.on('error', (errorCode, errorMessage) => {
+           console.log(errorCode + ': ' + errorMessage);
+         });
+         rippleAPI.api.on('connected', () => {
+           console.log('connected to ' + rippled);
+         });
+         rippleAPI.api.on('disconnected', (code) => {
+           // code - [close code](https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent) sent by the server
+           // will be 1000 if this was normal closure
+           console.log('disconnected, code:', code);
+         });
+
+       }
+       return rippleAPI.api;
+     }
+
+     function connectAPI() {
+       api = rippleAPI();
+
+       if (api.isConnected()) {
+         // $.when() returns resolved promise.
+         return $.when().then(() => {return api;});
+       } else {
+         console.log("connecting to " + rippled + " ...");
+         return api.connect().then(() => { return api; });
+       }
+     }
+
+    </script>
+  </body>
+</html>
