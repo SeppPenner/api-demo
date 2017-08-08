@@ -176,7 +176,7 @@ JavaScript applications can use [RippleAPI](https://ripple.com/build/rippleapi),
 ---
 
 # Connect to `rippled`
-## Command line
+## API Option 1: **Command Line**
 
 `rippled` features are available through a *command line*
 interface, when you are running an instance of
@@ -192,7 +192,7 @@ rippled server_info
 ---
 hook: showRippledURL
 # Connect to `rippled`
-## JSON-RPC
+## API Option 2: **JSON-RPC**
 
 Applications may also POST *Remote Procedure Calls* (RPC) to `rippled`.
 
@@ -210,7 +210,7 @@ END
 ---
 
 # Connect to `rippled`
-## Websocket
+## API Option 3: **Websocket**
 
 *Websockets* allow applications to submit multiple requests over a long-lived connection.
 
@@ -231,7 +231,7 @@ The response will include the same `id` that was passed in.  Your application sh
 ---
 
 # Connect to `rippled`
-## RippleAPI
+## API Option 4: **RippleAPI (JavaScript)**
 
 This [*boilerplate*](https://ripple.com/build/rippleapi/#boilerplate) shows the [`connect()`](https://ripple.com/build/rippleapi/#connect) method.
 
@@ -258,7 +258,7 @@ After `connect()`, other methods may be invoked.
 
 ---
 # Connect to `rippled`
-## RippleAPI
+## API Option 4: **RippleAPI (JavaScript)**
 
 [getServerInfo()](https://ripple.com/build/rippleapi/#getserverinfo) in `ripple-lib` corresponds to `rippled`'s [`server_info`](https://ripple.com/build/rippled-apis/#server-info).
 
