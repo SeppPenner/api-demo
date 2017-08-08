@@ -114,14 +114,13 @@ hook: showFaucetResponse
 
 .faucetResponse.preformatted[ ... ]
 
-The response gives a unique *address* for the account:
-
-.faucetResponse-address.preformatted[address]
+The response gives a unique *address* for the account: .faucetResponse-address.preformatted[address]
 
 And a *secret* that will allow us to transact with this account.
 
-The address is derived from a *public key*.
-The secret is derived from the corresponding *private key*.
+The address an encoding of a *public key*.
+
+The secret is an encoding of the corresponding *private key*.
 
 The *balance* indicates that the account was initially funded with
 10,000 XRP.
