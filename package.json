@@ -4,13 +4,17 @@
   "description": "A slide deck providing an introduction to ripple-lib to send and receive XRP.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "snyk-protect": "snyk protect",
+    "prepublish": "npm run snyk-protect"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "jquery": "^3.2.1",
     "lodash": "^4.17.4",
-    "ripple-lib": "^0.17.7"
-  }
+    "ripple-lib": "^0.17.7",
+    "snyk": "^1.189.0"
+  },
+  "snyk": true
 }
