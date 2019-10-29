@@ -13,7 +13,7 @@
   "dependencies": {
     "jquery": "^3.2.1",
     "lodash": "^4.17.4",
-    "ripple-lib": "^0.21.0",
+    "ripple-lib": "^1.4.0",
     "snyk": "^1.231.0"
   },
   "snyk": true
